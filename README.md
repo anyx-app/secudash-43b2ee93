@@ -138,7 +138,9 @@ This boilerplate includes a thin, typed SDK for the Anyx Common API.
 
 ### Environment
 
-Add the following to your `.env` for browser access (Vite requires the `VITE_` prefix):
+The SDK now works out of the box with a built‑in default server URL (`https://anyx.dev`). `.env` is optional.
+
+If you want to override via env (Vite requires the `VITE_` prefix):
 
 ```env
 VITE_ANYX_SERVER_URL=https://your-anyx-server.example.com
@@ -151,7 +153,7 @@ You can also override at runtime:
 import { createAnyxClient } from '@/sdk'
 
 const anyx = createAnyxClient({
-  baseUrl: 'https://your-anyx-server.example.com',
+  baseUrl: 'https://your-anyx-server.example.com', // optional; defaults to https://anyx.dev
   projectId: '<your-project-id>',
 })
 ```

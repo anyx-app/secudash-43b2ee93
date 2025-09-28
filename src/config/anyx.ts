@@ -27,7 +27,11 @@ export function getAnyxConfig(): AnyxConfig {
   // Process env first (SSR/tests), then import.meta.env (Vite runtime)
   const fromProcess = readProcessEnv();
   const fromImportMeta = readImportMetaEnv();
-  return { ...fromProcess, ...fromImportMeta };
+  const merged: AnyxConfig = { ...fromProcess, ...fromImportMeta };
+  if (!merged.serverUrl) {
+    merged.serverUrl = "https://anyx.dev";
+  }
+  return merged;
 }
 
 
