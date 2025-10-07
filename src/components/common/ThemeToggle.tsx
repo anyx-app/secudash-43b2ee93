@@ -1,16 +1,24 @@
 import { useTheme } from '@/theme/ThemeProvider'
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
-  const isDark = theme === 'dark'
+  const { themeId, setTheme } = useTheme()
+  const isDark = themeId.includes('dark')
+  
+  const handleToggle = () => {
+    // Toggle between light and dark variants of the current theme family
+    const family = themeId.split('-')[0]
+    const newTheme = isDark ? `${family}-light` : `${family}-dark`
+    setTheme(newTheme)
+  }
+  
   return (
     <button
       type="button"
-      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+      onClick={handleToggle}
       className="px-3 py-2 rounded border"
       aria-label="Toggle theme"
     >
-      {isDark ? 'Dark' : 'Light'}
+      {isDark ? '🌙 Dark' : '☀️ Light'}
     </button>
   )
 }

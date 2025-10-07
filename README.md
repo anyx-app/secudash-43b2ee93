@@ -246,68 +246,245 @@ const anyx = createAnyxClient({ apiKey: process.env.ANYX_COMMON_API_KEY })
   - Ensure your backend proxy injects `x-api-key` (browser should not send it).
   - For server/test usage only, pass `apiKey` to `createAnyxClient`.
 
-## 🎨 Theming (CSS variables + data-theme)
+## 🎨 Enhanced Design System & Theming
 
-This boilerplate supports near-zero-effort UI theming using CSS variables and a tiny `ThemeProvider`.
+This boilerplate includes a production-ready design system with comprehensive theming capabilities, multiple preset themes, and visual customization tools.
 
-### How it works
+### Features
 
-- Tokens live in `src/index.css` under `:root` and are overridden for dark mode under `:root[data-theme='dark']`.
-- A pre-hydration script in `index.html` applies the last chosen theme (or system default) to avoid flash.
-- `ThemeProvider` manages theme state and persistence; `useTheme` exposes `theme` and `setTheme`.
+- **10 Theme Presets**: 5 theme families (Default, Ocean, Sunset, Professional, High-Contrast), each with light/dark variants
+- **Comprehensive Design Tokens**: Colors, spacing, typography, shadows, transitions, and animations
+- **Visual Theme Customizer**: Live editing and preview of theme colors
+- **Theme Import/Export**: Share themes as JSON files
+- **Full TypeScript Support**: Typed tokens and theme definitions
+- **Zero Runtime Cost**: CSS variables with no JavaScript overhead
+- **Backward Compatible**: Legacy `light`/`dark` themes still work
 
-### Files
-
-- `src/index.css` – adds `:root[data-theme='light'|'dark']` token blocks
-- `src/theme/ThemeProvider.tsx` – `ThemeProvider` + `useTheme`
-- `src/components/common/ThemeToggle.tsx` – simple toggle button
-- `src/App.tsx` – wraps app with `ThemeProvider`
-- `index.html` – tiny inline script to set initial `data-theme`
-
-### Usage
+### Quick Start
 
 ```tsx
+import { ThemeSelector } from '@/components/theme/ThemeSelector'
 import { ThemeToggle } from '@/components/common/ThemeToggle'
 
 function Header() {
   return (
     <header className="flex items-center justify-between p-4">
-      <h1>App</h1>
-      <ThemeToggle />
+      <h1>My App</h1>
+      <div className="flex gap-2">
+        <ThemeToggle />      {/* Quick light/dark toggle */}
+        <ThemeSelector />    {/* Full theme picker */}
+      </div>
     </header>
   )
 }
 ```
 
-All components that use the shared CSS tokens (e.g., `bg-background text-foreground`) will respond automatically.
+### Available Themes
 
-#### Additional examples
+**Default** - Clean, neutral theme  
+**Ocean** - Calming blues and teals inspired by the sea  
+**Sunset** - Warm oranges and purples for an energetic feel  
+**Professional** - Corporate-friendly gray and blue palette  
+**High-Contrast** - WCAG AAA compliant for maximum accessibility
+
+Each theme has light and dark variants. Visit `/themes` to explore all themes with live previews.
+
+### Architecture
+
+```
+src/
+  design-system/
+    tokens/
+      primitives.ts      # Base values (colors, scales)
+      semantic.ts        # Contextual token mappings
+      component.ts       # Component-specific tokens
+      types.ts           # TypeScript definitions
+    themes/
+      presets/           # 10 built-in themes
+      theme-registry.ts  # Theme management
+    utils/
+      color-generator.ts # HSL manipulation utilities
+  components/
+    theme/
+      ThemeSelector.tsx  # Theme picker dropdown
+      ThemeCustomizer.tsx # Visual theme editor
+  theme/
+    ThemeProvider.tsx    # Theme context provider
+```
+
+### Using the Theme System
+
+#### Basic Theme Switching
 
 ```tsx
 import { useTheme } from '@/theme/ThemeProvider'
 
-// Programmatically switch theme based on a user action or setting
-function Preferences() {
-  const { theme, setTheme } = useTheme()
+function ThemeSettings() {
+  const { themeId, setTheme } = useTheme()
+  
   return (
-    <div className="space-x-2">
-      <button className="px-2 py-1 border" onClick={() => setTheme('light')}>Light</button>
-      <button className="px-2 py-1 border" onClick={() => setTheme('dark')}>Dark</button>
-      <span className="ml-2 text-sm text-muted-foreground">Current: {theme}</span>
+    <div>
+      <p>Current: {themeId}</p>
+      <button onClick={() => setTheme('ocean-dark')}>Ocean Dark</button>
+      <button onClick={() => setTheme('sunset-light')}>Sunset Light</button>
     </div>
   )
 }
-
-// Use tokens in custom styles
-// Example CSS (Tailwind applies via tokens):
-// bg-background text-foreground border-border ring-ring
 ```
 
-### Agent handoff
+#### Visual Theme Customizer
 
-- Theme selection is stored in `localStorage` under `theme` and applied via `document.documentElement.dataset.theme`.
-- To add a new theme, define a new block in `src/index.css`, e.g. `:root[data-theme='dim'] { ... }`, then allow `setTheme('dim')`.
-- Ensure new UI components use tokens (not hard-coded colors) to remain theme-compatible.
+```tsx
+import { ThemeCustomizer } from '@/components/theme/ThemeCustomizer'
+
+function SettingsPage() {
+  return <ThemeCustomizer /> // Full visual editor with export/import
+}
+```
+
+#### Accessing Theme Data
+
+```tsx
+import { useTheme } from '@/theme/ThemeProvider'
+
+function CustomComponent() {
+  const { theme } = useTheme()
+  
+  console.log(theme?.metadata.name)        // "Ocean Dark"
+  console.log(theme?.tokens.primary)       // "199 89% 55%"
+  console.log(theme?.preview?.primary)     // Color preview value
+  
+  return <div>Using {theme?.metadata.name}</div>
+}
+```
+
+### Design Tokens
+
+#### Color Tokens
+- `--background`, `--foreground`
+- `--primary`, `--primary-foreground`
+- `--secondary`, `--secondary-foreground`
+- `--muted`, `--muted-foreground`
+- `--accent`, `--accent-foreground`
+- `--destructive`, `--destructive-foreground`
+- `--success`, `--success-foreground`
+- `--warning`, `--warning-foreground`
+- `--border`, `--input`, `--ring`
+
+#### Spacing Scale
+`--spacing-xs` (4px) through `--spacing-5xl` (128px)
+
+#### Typography
+`--font-size-xs` (12px) through `--font-size-5xl` (48px)  
+`--font-weight-light` through `--font-weight-bold`  
+`--line-height-tight`, `--line-height-normal`, etc.
+
+#### Shadows & Effects
+`--shadow-xs` through `--shadow-xl`  
+`--transition-fast`, `--transition-base`, `--transition-slow`
+
+### Custom Themes
+
+#### Creating a Custom Theme
+
+```tsx
+import { registerTheme } from '@/design-system/themes/theme-registry'
+import type { ThemePreset } from '@/design-system/themes/types'
+
+const myTheme: ThemePreset = {
+  metadata: {
+    id: 'my-custom-theme',
+    name: 'My Theme',
+    description: 'A custom theme',
+    category: 'light',
+  },
+  tokens: {
+    background: '0 0% 100%',
+    foreground: '0 0% 0%',
+    primary: '220 100% 50%',
+    primaryForeground: '0 0% 100%',
+    // ... other required tokens
+  },
+}
+
+registerTheme(myTheme)
+```
+
+#### Export/Import Themes
+
+```tsx
+import { exportTheme, importTheme } from '@/design-system/themes/theme-registry'
+
+// Export current theme as JSON
+const json = exportTheme('ocean-dark')
+console.log(json)
+
+// Import theme from JSON string
+const theme = importTheme(jsonString)
+if (theme) {
+  console.log(`Imported: ${theme.metadata.name}`)
+}
+```
+
+### Color Utilities
+
+```tsx
+import { generateColorScale, lighten, darken, complementary } from '@/design-system/utils/color-generator'
+
+// Generate a full color scale from a base color
+const scale = generateColorScale('220 100% 50%')
+console.log(scale[500]) // Base color
+console.log(scale[700]) // Darker variant
+
+// Manipulate colors
+const lighter = lighten('220 100% 50%', 10)
+const darker = darken('220 100% 50%', 10)
+const opposite = complementary('220 100% 50%')
+
+// Check accessibility
+import { meetsContrastRequirement } from '@/design-system/utils/color-generator'
+const accessible = meetsContrastRequirement('0 0% 100%', '0 0% 0%', 'AA', 'normal')
+```
+
+### Routes
+
+- `/themes` - Theme showcase and customizer page
+
+### Files
+
+- `src/design-system/` - Complete design system architecture
+- `src/theme/ThemeProvider.tsx` - Theme context provider
+- `src/components/theme/` - Theme UI components
+- `src/index.css` - CSS variable definitions
+- `src/pages/Themes.tsx` - Theme demo page
+
+### Backward Compatibility
+
+Legacy code using `theme='light'|'dark'` continues to work:
+
+```tsx
+// Still works!
+const { theme, setTheme } = useTheme()
+setTheme('light')  // Maps to 'default-light'
+setTheme('dark')   // Maps to 'default-dark'
+```
+
+### Best Practices
+
+1. **Use semantic tokens** (`--primary`, `--muted`) instead of hard-coded colors
+2. **Test themes** using the `/themes` page before deploying
+3. **Export custom themes** for version control and sharing
+4. **Consider accessibility** - use High-Contrast themes as reference
+5. **Leverage TypeScript** - import token types for autocomplete
+
+### Migration from Basic Theming
+
+No migration needed! The enhanced system is fully backward compatible. Start using new features incrementally:
+
+1. Replace `<ThemeToggle />` with `<ThemeSelector />` for more options
+2. Add `/themes` link to your navigation
+3. Use new design tokens (`--spacing-md`, `--shadow-lg`) in custom styles
+4. Create custom themes using the visual customizer
 
 ## 🔐 Supabase Integration (Auth + Guards)
 
