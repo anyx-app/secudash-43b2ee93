@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useBrand } from '@/hooks/useBrand'
 import { DashboardSidebar, DashboardSidebarProps } from './DashboardSidebar'
@@ -44,16 +44,28 @@ export function DashboardLayout({
   className,
 }: DashboardLayoutProps) {
   const { config } = useBrand()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
-      {showSidebar && <DashboardSidebar {...sidebar} />}
+      {showSidebar && (
+        <DashboardSidebar
+          {...sidebar}
+          mobileOpen={mobileMenuOpen}
+          onMobileClose={() => setMobileMenuOpen(false)}
+        />
+      )}
 
       {/* Main content area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        {showHeader && <DashboardHeader {...header} />}
+        {showHeader && (
+          <DashboardHeader
+            {...header}
+            onMobileMenuClick={() => setMobileMenuOpen(true)}
+          />
+        )}
 
         {/* Page content */}
         <main className={cn(

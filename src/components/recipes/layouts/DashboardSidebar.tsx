@@ -1,8 +1,9 @@
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { useBrand } from '@/hooks/useBrand'
 import { 
@@ -43,6 +44,10 @@ export interface DashboardSidebarProps {
   defaultCollapsed?: boolean
   onLogout?: () => void
   className?: string
+  
+  // Mobile support
+  mobileOpen?: boolean
+  onMobileClose?: () => void
 }
 
 const defaultNavItems: NavItem[] = [
@@ -60,15 +65,18 @@ const defaultBottomItems: NavItem[] = [
  * DashboardSidebar - Modern collapsible sidebar navigation
  * 
  * Perfect for: Admin panels, dashboards, SaaS applications
- * Features: Collapsible, brand-aware, user profile, badges
+ * Features: Collapsible, brand-aware, user profile, badges, **mobile-responsive**
  * 
  * @example
  * ```tsx
+ * // Desktop & Mobile responsive
  * <DashboardSidebar
  *   logo={<img src="/logo.png" />}
  *   user={{ name: "John Doe", email: "john@example.com" }}
  *   navItems={navItems}
  *   onLogout={() => handleLogout()}
+ *   mobileOpen={isMobileMenuOpen}
+ *   onMobileClose={() => setIsMobileMenuOpen(false)}
  * />
  * ```
  */
@@ -81,6 +89,8 @@ export function DashboardSidebar({
   defaultCollapsed = false,
   onLogout,
   className,
+  mobileOpen = false,
+  onMobileClose,
 }: DashboardSidebarProps) {
   const { config } = useBrand()
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
@@ -88,63 +98,21 @@ export function DashboardSidebar({
 
   const isActive = (href: string) => location.pathname === href
 
-  return (
-    <motion.aside
-      initial={false}
-      animate={{ width: isCollapsed ? 80 : 280 }}
-      transition={{ duration: 0.3 }}
-      className={cn(
-        'relative flex flex-col border-r bg-background',
-        config.preferredCardStyle === 'elevated' && 'shadow-lg',
-        className
-      )}
-    >
+  // Sidebar content component (reused for desktop & mobile)
+  const SidebarContent = () => (
+    <>
       {/* Header - Logo */}
       <div className="flex h-16 items-center justify-between px-4 border-b">
-        <AnimatePresence mode="wait">
-          {isCollapsed ? (
-            <motion.div
-              key="collapsed"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex items-center justify-center w-full"
-            >
-              {logoCollapsed || (
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
-                  A
-                </div>
-              )}
-            </motion.div>
-          ) : (
-            <motion.div
-              key="expanded"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex items-center gap-2"
-            >
-              {logo || (
-                <>
-                  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
-                    A
-                  </div>
-                  <span className="font-bold text-lg">AnyX</span>
-                </>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Collapse toggle */}
+        <Link to="/" className="flex items-center gap-2">
+          {isCollapsed ? logoCollapsed || logo : logo}
+        </Link>
+        
+        {/* Desktop collapse button (hidden on mobile) */}
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className={cn(
-            'h-8 w-8',
-            isCollapsed && 'absolute -right-3 top-5 z-10 border bg-background shadow-md'
-          )}
+          className="hidden lg:flex"
         >
           {isCollapsed ? (
             <ChevronRight className="h-4 w-4" />
@@ -158,135 +126,116 @@ export function DashboardSidebar({
       <ScrollArea className="flex-1 px-3 py-4">
         <nav className="space-y-1">
           {navItems.map((item) => (
-            <div key={item.href}>
-              <Link to={item.href}>
-                <Button
-                  variant={isActive(item.href) ? 'secondary' : 'ghost'}
-                  className={cn(
-                    'w-full justify-start gap-3',
-                    isCollapsed && 'justify-center',
-                    isActive(item.href) && 'bg-primary/10 text-primary hover:bg-primary/20'
-                  )}
-                >
-                  <item.icon className="h-5 w-5 flex-shrink-0" />
-                  
-                  <AnimatePresence mode="wait">
-                    {!isCollapsed && (
-                      <motion.span
-                        initial={{ opacity: 0, width: 0 }}
-                        animate={{ opacity: 1, width: 'auto' }}
-                        exit={{ opacity: 0, width: 0 }}
-                        className="flex-1 text-left"
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-
-                  {!isCollapsed && item.badge && (
-                    <Badge 
-                      variant="secondary" 
-                      className={cn(
-                        'ml-auto',
-                        typeof item.badge === 'number' && 'bg-primary/20 text-primary'
-                      )}
-                    >
+            <Link
+              key={item.href}
+              to={item.href}
+              onClick={onMobileClose}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                isActive(item.href)
+                  ? 'bg-primary text-primary-foreground font-medium'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                isCollapsed && 'justify-center'
+              )}
+            >
+              <item.icon className="h-5 w-5 flex-shrink-0" />
+              {!isCollapsed && (
+                <>
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge && (
+                    <Badge variant="secondary" className="ml-auto">
                       {item.badge}
                     </Badge>
                   )}
-                </Button>
-              </Link>
-
-              {/* Sub-items */}
-              {!isCollapsed && item.subItems && isActive(item.href) && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="ml-9 mt-1 space-y-1"
-                >
-                  {item.subItems.map((subItem) => (
-                    <Link key={subItem.href} to={subItem.href}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start text-muted-foreground hover:text-foreground"
-                      >
-                        {subItem.label}
-                      </Button>
-                    </Link>
-                  ))}
-                </motion.div>
+                </>
               )}
-            </div>
+            </Link>
           ))}
         </nav>
-      </ScrollArea>
 
-      {/* Bottom items */}
-      {bottomItems.length > 0 && (
-        <div className="border-t px-3 py-3 space-y-1">
-          {bottomItems.map((item) => (
-            <Link key={item.href} to={item.href}>
-              <Button
-                variant="ghost"
+        {/* Bottom items */}
+        {bottomItems.length > 0 && (
+          <div className="mt-6 border-t pt-4 space-y-1">
+            {bottomItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={onMobileClose}
                 className={cn(
-                  'w-full justify-start gap-3',
+                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
                   isCollapsed && 'justify-center'
                 )}
               >
                 <item.icon className="h-5 w-5 flex-shrink-0" />
-                {!isCollapsed && (
-                  <span className="flex-1 text-left">{item.label}</span>
-                )}
-              </Button>
-            </Link>
-          ))}
-        </div>
-      )}
+                {!isCollapsed && <span className="flex-1">{item.label}</span>}
+              </Link>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
 
       {/* User profile */}
       {user && (
-        <div className="border-t p-3">
-          <div className={cn(
-            'flex items-center gap-3',
-            isCollapsed && 'justify-center'
-          )}>
-            <Avatar className="h-9 w-9">
-              <AvatarImage src={user.avatar} alt={user.name} />
+        <div className={cn(
+          'border-t p-4',
+          isCollapsed ? 'flex justify-center' : 'flex items-center gap-3'
+        )}>
+          {isCollapsed ? (
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user.avatar} />
               <AvatarFallback>{user.name[0]}</AvatarFallback>
             </Avatar>
-
-            <AnimatePresence mode="wait">
-              {!isCollapsed && (
-                <motion.div
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: 'auto' }}
-                  exit={{ opacity: 0, width: 0 }}
-                  className="flex-1 min-w-0"
+          ) : (
+            <>
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={user.avatar} />
+                <AvatarFallback>{user.name[0]}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 overflow-hidden">
+                <p className="text-sm font-medium truncate">{user.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              </div>
+              {onLogout && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onLogout}
+                  className="flex-shrink-0"
                 >
-                  <p className="text-sm font-medium truncate">{user.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {user.email}
-                  </p>
-                </motion.div>
+                  <LogOut className="h-4 w-4" />
+                </Button>
               )}
-            </AnimatePresence>
-
-            {!isCollapsed && onLogout && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onLogout}
-                className="h-8 w-8 flex-shrink-0"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
+            </>
+          )}
         </div>
       )}
-    </motion.aside>
+    </>
+  )
+
+  return (
+    <>
+      {/* Mobile Sheet Drawer */}
+      <Sheet open={mobileOpen} onOpenChange={onMobileClose}>
+        <SheetContent side="left" className="w-[280px] p-0 lg:hidden">
+          <div className="flex h-full flex-col">
+            <SidebarContent />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Desktop Sidebar */}
+      <motion.aside
+        initial={false}
+        animate={{ width: isCollapsed ? 80 : 280 }}
+        transition={{ duration: 0.3 }}
+        className={cn(
+          'hidden lg:flex relative flex-col border-r bg-background',
+          config.preferredCardStyle === 'elevated' && 'shadow-lg',
+          className
+        )}
+      >
+        <SidebarContent />
+      </motion.aside>
+    </>
   )
 }
-
