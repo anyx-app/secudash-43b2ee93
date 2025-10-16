@@ -32,7 +32,8 @@
   },
   "include": [
     "src",
-    "@tests"
+    "@tests",
+    "vitest.config.ts"
   ],
   "exclude": [
     "tailwind.config.ts",
