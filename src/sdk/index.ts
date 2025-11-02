@@ -21,4 +21,5 @@ export {
   InvalidResponseError,
 } from "./anyx";
 
-
+export { getSupabase } from "./supabase";
+export { realtimeClient, createProjectChannel } from "./realtime";

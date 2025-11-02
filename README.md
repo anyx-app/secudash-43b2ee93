@@ -752,3 +752,100 @@ function Profile() {
 
 - Expect a brief loading state on page load while the session is restored.
 - If OAuth callbacks fail, verify Site/Redirect URLs and provider credentials.
+
+## 🔄 Real-time Features (Supabase Realtime)
+
+Built-in support for real-time broadcast/presence features using Supabase Realtime. Works for **all projects** (with or without database).
+
+### How It Works
+
+- **Projects with DB**: Uses your own Supabase instance
+- **Projects without DB**: Uses centralized AnyX Realtime (auto-configured)
+- **Same API**: No conditional logic needed
+
+### Quick Start
+
+```tsx
+import { createProjectChannel } from '@/sdk'
+
+function GameRoom() {
+  useEffect(() => {
+    // Create namespaced channel (auto-scoped to your project)
+    const channel = createProjectChannel('poker-room-123')
+    
+    if (!channel) {
+      console.error('Realtime not configured')
+      return
+    }
+
+    // Listen for events
+    channel
+      .on('broadcast', { event: 'player-action' }, (payload) => {
+        console.log('Player moved:', payload)
+      })
+      .subscribe()
+
+    // Send events
+    const sendAction = (action: string) => {
+      channel.send({
+        type: 'broadcast',
+        event: 'player-action',
+        payload: { action, timestamp: Date.now() }
+      })
+    }
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [])
+
+  return <div>Game Room</div>
+}
+```
+
+### Use Cases
+
+- **Multiplayer Games**: Real-time player actions, game state sync
+- **Chat Applications**: Live messaging, typing indicators
+- **Collaborative Tools**: Cursor tracking, live editing
+- **Live Dashboards**: Real-time metrics, notifications
+- **Presence**: Show who's online, active users
+
+### Channel Naming
+
+Channels are auto-namespaced to your project:
+```
+anyx:{project_id}:{room_name}
+```
+
+This ensures isolation when using centralized Realtime.
+
+### Broadcast vs Presence
+
+**Broadcast** (most common):
+```tsx
+channel.on('broadcast', { event: 'message' }, handler)
+channel.send({ type: 'broadcast', event: 'message', payload })
+```
+
+**Presence** (track online users):
+```tsx
+channel.on('presence', { event: 'sync' }, () => {
+  const state = channel.presenceState()
+  console.log('Online users:', Object.keys(state))
+})
+
+channel.track({ user: 'alice', status: 'online' })
+```
+
+### Important
+
+- No database required for Broadcast/Presence
+- For Postgres Changes, you need a connected database
+- Channels are scoped to your project automatically
+- Use unique room names to avoid conflicts
+
+### Files
+
+- `src/sdk/realtime.ts` - Realtime utilities
+- `src/sdk/supabase.ts` - Supabase client singleton
