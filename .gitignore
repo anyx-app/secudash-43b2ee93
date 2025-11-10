@@ -124,6 +124,3 @@ coverage
 
 @tests/
 .vercel
-
-# Agent context file (local only, not pushed to git)
-repo.md
