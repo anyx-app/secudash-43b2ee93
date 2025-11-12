@@ -11,12 +11,12 @@ interface QueryFilter {
 
 interface QueryOrder {
   column: string;
-  ascending: boolean;
+  ascending?: boolean;
 }
 
 class QueryBuilder {
   private tableName: string;
-  private selectClause: string = '';
+  private selectClause: string = '*';
   private filtersList: QueryFilter[] = [];
   private orderList: QueryOrder[] = [];
   private limitValue?: number;
@@ -137,15 +137,15 @@ class QueryBuilder {
 
     if (this.operation === 'insert') {
       payload.values = this.insertValues;
-      payload.select = this.selectClause;
+      if (this.selectClause) payload.select = this.selectClause;
     } else if (this.operation === 'update') {
       payload.values = this.updateValues;
       payload.filters = this.filtersList;
-      payload.select = this.selectClause;
+      if (this.selectClause) payload.select = this.selectClause;
     } else if (this.operation === 'delete') {
       payload.filters = this.filtersList;
     } else {
-      payload.select = this.selectClause;
+      payload.select = this.selectClause || '*';
       payload.filters = this.filtersList;
       payload.order = this.orderList;
       payload.limit = this.limitValue;
